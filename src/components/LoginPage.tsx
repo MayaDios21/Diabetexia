@@ -3,6 +3,7 @@ import { Mail, CheckCircle2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
+import logo from 'figma:asset/f80e4d54fed4d5464fb9e70ac865852663d91f1e.png';
 
 interface LoginPageProps {
   onLogin: (email: string) => void;
@@ -37,10 +38,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-            <Mail className="w-8 h-8 text-white" />
+          <div className="mx-auto mb-6">
+            <img src={logo} alt="DiabetEX" className="h-20 mx-auto" />
           </div>
-          <h1 className="mb-2">Bienvenido a NutriControl</h1>
           <p className="text-muted-foreground">
             Tu compañero para el control de diabetes tipo 2
           </p>

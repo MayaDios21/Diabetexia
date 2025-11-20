@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Calendar, User, TrendingDown, TrendingUp } from 'lucide-react';
+import { Calendar, User, TrendingDown, TrendingUp, Printer } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { MealCard } from './MealCard';
 import { ProfileModal } from './ProfileModal';
 import { generateDailyMeals, Meal } from '../utils/mealGenerator';
+import logo from 'figma:asset/f80e4d54fed4d5464fb9e70ac865852663d91f1e.png';
 
 interface UserProfile {
   email: string;
@@ -75,22 +76,221 @@ export function DailyPlanPage({ userProfile, onUpdateProfile }: DailyPlanPagePro
     });
   };
 
+  const handlePrint = () => {
+    // Create a printable version of the meal plan
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Plan Alimenticio - ${formatDate(selectedDate)}</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 40px 20px;
+              color: #333;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 40px;
+              border-bottom: 2px solid #4F46E5;
+              padding-bottom: 20px;
+            }
+            h1 {
+              color: #4F46E5;
+              margin: 10px 0;
+              font-size: 28px;
+            }
+            .date {
+              color: #666;
+              font-size: 16px;
+              text-transform: capitalize;
+            }
+            .summary {
+              background: #F0F9FF;
+              padding: 20px;
+              border-radius: 8px;
+              margin-bottom: 30px;
+              border: 1px solid #BAE6FD;
+            }
+            .summary-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 10px;
+            }
+            .summary-label {
+              color: #666;
+            }
+            .summary-value {
+              font-weight: 600;
+              color: #4F46E5;
+            }
+            .meal {
+              margin-bottom: 30px;
+              page-break-inside: avoid;
+              border: 1px solid #E5E7EB;
+              border-radius: 8px;
+              padding: 20px;
+            }
+            .meal-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 15px;
+              border-bottom: 1px solid #E5E7EB;
+              padding-bottom: 10px;
+            }
+            .meal-type {
+              font-size: 20px;
+              font-weight: 600;
+              color: #1F2937;
+            }
+            .meal-carbs {
+              background: #4F46E5;
+              color: white;
+              padding: 4px 12px;
+              border-radius: 12px;
+              font-size: 14px;
+            }
+            .meal-name {
+              font-size: 18px;
+              color: #4F46E5;
+              margin-bottom: 10px;
+              font-weight: 500;
+            }
+            .meal-reason {
+              color: #666;
+              line-height: 1.6;
+              margin-bottom: 15px;
+            }
+            .meal-foods {
+              margin-top: 10px;
+            }
+            .meal-foods-title {
+              font-weight: 600;
+              margin-bottom: 8px;
+              color: #374151;
+            }
+            .meal-foods ul {
+              margin: 0;
+              padding-left: 20px;
+              color: #666;
+            }
+            .meal-foods li {
+              margin-bottom: 4px;
+            }
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 2px solid #E5E7EB;
+              text-align: center;
+              color: #666;
+              font-size: 14px;
+            }
+            @media print {
+              body {
+                padding: 20px;
+              }
+              .meal {
+                page-break-inside: avoid;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Plan Alimenticio DiabetEX</h1>
+            <p class="date">${formatDate(selectedDate)}</p>
+          </div>
+
+          <div class="summary">
+            <div class="summary-row">
+              <span class="summary-label">Carbohidratos totales del día:</span>
+              <span class="summary-value">${Math.round(totalCarbs)}g / ${userProfile.dailyCarbsGoal}g</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Meta principal:</span>
+              <span class="summary-value">${userProfile.mainGoal === 'glucose' ? 'Controlar glucosa' : 'Bajar de peso'}</span>
+            </div>
+            ${userProfile.hasHypertension ? `
+            <div class="summary-row">
+              <span class="summary-label">Consideraciones:</span>
+              <span class="summary-value">Plan bajo en sodio (hipertensión)</span>
+            </div>
+            ` : ''}
+            ${userProfile.allergies.length > 0 ? `
+            <div class="summary-row">
+              <span class="summary-label">Alergias:</span>
+              <span class="summary-value">${userProfile.allergies.join(', ')}</span>
+            </div>
+            ` : ''}
+          </div>
+
+          ${meals.map(meal => `
+            <div class="meal">
+              <div class="meal-header">
+                <span class="meal-type">${meal.type}</span>
+                <span class="meal-carbs">${meal.carbs}g carbohidratos</span>
+              </div>
+              <div class="meal-name">${meal.name}</div>
+              <div class="meal-reason">${meal.reason}</div>
+              <div class="meal-foods">
+                <div class="meal-foods-title">Alimentos incluidos:</div>
+                <ul>
+                  ${meal.foods.map(food => `<li>${food}</li>`).join('')}
+                </ul>
+              </div>
+            </div>
+          `).join('')}
+
+          <div class="footer">
+            <p><strong>DiabetEX</strong> - Apoyo para Diabetes Tipo 2</p>
+            <p style="margin-top: 10px; font-size: 12px;">Este plan es informativo. Consulta con tu médico antes de hacer cambios en tu dieta.</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Wait for content to load then print
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  };
+
   return (
     <div className="min-h-screen pb-8">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-white">NutriControl</h1>
-            <Button 
-              variant="secondary" 
-              size="sm"
-              className="gap-2"
-              onClick={() => setShowProfile(true)}
-            >
-              <User className="w-4 h-4" />
-              Perfil
-            </Button>
+            <img src={logo} alt="DiabetEX" className="h-10" />
+            <div className="flex gap-2">
+              <Button 
+                variant="secondary" 
+                size="sm"
+                className="gap-2"
+                onClick={handlePrint}
+              >
+                <Printer className="w-4 h-4" />
+                Imprimir
+              </Button>
+              <Button 
+                variant="secondary" 
+                size="sm"
+                className="gap-2"
+                onClick={() => setShowProfile(true)}
+              >
+                <User className="w-4 h-4" />
+                Perfil
+              </Button>
+            </div>
           </div>
           <div className="flex items-center gap-2 text-white/90">
             <Calendar className="w-5 h-5" />

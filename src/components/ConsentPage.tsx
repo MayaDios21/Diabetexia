@@ -3,6 +3,7 @@ import { Shield, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Checkbox } from './ui/checkbox';
+import logo from 'figma:asset/f80e4d54fed4d5464fb9e70ac865852663d91f1e.png';
 
 interface ConsentPageProps {
   onAccept: () => void;
@@ -15,12 +16,12 @@ export function ConsentPage({ onAccept }: ConsentPageProps) {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl p-8">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-            <Shield className="w-8 h-8 text-white" />
+          <div className="mx-auto mb-6">
+            <img src={logo} alt="DiabetEX" className="h-20 mx-auto" />
           </div>
           <h1 className="mb-2">Consentimiento de uso</h1>
           <p className="text-muted-foreground">
-            Antes de comenzar, es importante que comprendas cómo funciona NutriControl
+            Antes de comenzar, es importante que comprendas cómo funciona DiabetEX
           </p>
         </div>
 

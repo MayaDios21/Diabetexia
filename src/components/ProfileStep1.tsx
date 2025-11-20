@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Checkbox } from './ui/checkbox';
 import { Badge } from './ui/badge';
+import logo from 'figma:asset/f80e4d54fed4d5464fb9e70ac865852663d91f1e.png';
 
 interface ProfileStep1Props {
   onNext: (data: {
@@ -57,6 +58,9 @@ export function ProfileStep1({ onNext }: ProfileStep1Props) {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl p-8">
         <div className="mb-8">
+          <div className="flex items-center justify-center mb-6">
+            <img src={logo} alt="DiabetEX" className="h-16" />
+          </div>
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
               <Activity className="w-6 h-6 text-white" />

@@ -6,6 +6,7 @@ import { Badge } from './ui/badge';
 import { Slider } from './ui/slider';
 import { Card } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import logo from 'figma:asset/f80e4d54fed4d5464fb9e70ac865852663d91f1e.png';
 
 interface UserProfile {
   email: string;
@@ -119,9 +120,7 @@ export function ProfileModal({ userProfile, onUpdate, onClose }: ProfileModalPro
         <div className="p-6 border-b bg-gradient-to-r from-indigo-600 to-purple-600">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 text-white">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <User className="w-6 h-6" />
-              </div>
+              <img src={logo} alt="DiabetEX" className="h-8" />
               <div>
                 <h2 className="text-white mb-1">Mi Perfil</h2>
                 <p className="text-white/80">{userProfile.email}</p>

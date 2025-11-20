@@ -5,6 +5,7 @@ import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Slider } from './ui/slider';
+import logo from 'figma:asset/f80e4d54fed4d5464fb9e70ac865852663d91f1e.png';
 
 interface ProfileStep2Props {
   onNext: (data: {
@@ -63,6 +64,9 @@ export function ProfileStep2({ onNext, onBack }: ProfileStep2Props) {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl p-8">
         <div className="mb-8">
+          <div className="flex items-center justify-center mb-6">
+            <img src={logo} alt="DiabetEX" className="h-16" />
+          </div>
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={onBack}
