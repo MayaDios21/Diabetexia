@@ -1,221 +1,203 @@
-import { useState } from 'react';
-import { Target, ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { Input } from './ui/input';
-import { Badge } from './ui/badge';
-import { Slider } from './ui/slider';
-import logo from 'figma:asset/f80e4d54fed4d5464fb9e70ac865852663d91f1e.png';
+import { Label } from './ui/label';
+import { Checkbox } from './ui/checkbox';
+import { Logo } from './Logo';
+import { Target, AlertCircle, Leaf, ChevronLeft } from 'lucide-react';
 
-interface ProfileStep2Props {
-  onNext: (data: {
-    weight: number;
-    height: number;
-    bmi: number;
-    mainGoal: 'glucose' | 'weight-loss';
-    dailyCarbsGoal: number;
-  }) => void;
-  onBack: () => void;
+interface ProfileStep2Data {
+  primaryGoal: 'glucose-control' | 'weight-loss';
+  allergies: string[];
+  dietType: 'omnivore' | 'vegetarian';
+  hasHypertension: boolean;
 }
 
-export function ProfileStep2({ onNext, onBack }: ProfileStep2Props) {
-  const [weight, setWeight] = useState('');
-  const [height, setHeight] = useState('');
-  const [mainGoal, setMainGoal] = useState<'glucose' | 'weight-loss'>('glucose');
-  const [dailyCarbsGoal, setDailyCarbsGoal] = useState(150);
+interface ProfileStep2Props {
+  onComplete: (data: ProfileStep2Data) => void;
+  onBack: () => void;
+  initialData?: ProfileStep2Data;
+}
 
-  const calculateBMI = () => {
-    const w = parseFloat(weight);
-    const h = parseFloat(height) / 100; // convert cm to m
-    if (w && h) {
-      return (w / (h * h)).toFixed(1);
+const commonAllergies = [
+  'Ninguna',
+  'Mariscos',
+  'Frutos secos',
+  'Lácteos',
+  'Gluten',
+  'Soya',
+  'Huevo'
+];
+
+export function ProfileStep2({ onComplete, onBack, initialData }: ProfileStep2Props) {
+  const [formData, setFormData] = useState<ProfileStep2Data>(initialData || {
+    primaryGoal: 'glucose-control',
+    allergies: [],
+    dietType: 'omnivore',
+    hasHypertension: false
+  });
+  
+  const handleAllergyToggle = (allergy: string) => {
+    if (allergy === 'Ninguna') {
+      setFormData({ ...formData, allergies: [] });
+      return;
     }
-    return null;
-  };
-
-  const bmi = calculateBMI();
-
-  const getBMICategory = (bmi: number) => {
-    if (bmi < 18.5) return { label: 'Bajo peso', color: 'text-blue-600' };
-    if (bmi < 25) return { label: 'Peso normal', color: 'text-green-600' };
-    if (bmi < 30) return { label: 'Sobrepeso', color: 'text-amber-600' };
-    return { label: 'Obesidad', color: 'text-red-600' };
-  };
-
-  const handleNext = () => {
-    const w = parseFloat(weight);
-    const h = parseFloat(height);
-    const calculatedBMI = parseFloat(calculateBMI() || '0');
     
-    if (w && h && calculatedBMI) {
-      onNext({
-        weight: w,
-        height: h,
-        bmi: calculatedBMI,
-        mainGoal,
-        dailyCarbsGoal,
-      });
-    }
+    const newAllergies = formData.allergies.includes(allergy)
+      ? formData.allergies.filter(a => a !== allergy)
+      : [...formData.allergies, allergy];
+    
+    setFormData({ ...formData, allergies: newAllergies });
   };
-
-  const isValid = weight && height && parseFloat(weight) > 0 && parseFloat(height) > 0;
-
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onComplete(formData);
+  };
+  
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl p-8">
-        <div className="mb-8">
-          <div className="flex items-center justify-center mb-6">
-            <img src={logo} alt="DiabetEX" className="h-16" />
-          </div>
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={onBack}
-              className="w-12 h-12 rounded-xl border border-border hover:bg-accent flex items-center justify-center transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <Badge variant="secondary">Paso 2 de 2</Badge>
-          </div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
-              <Target className="w-6 h-6 text-white" />
-            </div>
-          </div>
-          <h1 className="mb-2">Datos físicos y metas</h1>
-          <p className="text-muted-foreground">
-            Últimos datos para calcular tu plan personalizado
-          </p>
+      <Card className="w-full max-w-lg p-8">
+        <div className="mb-6 text-center">
+          <Logo size="md" showTagline={false} />
+          <h2 className="mt-4">Crea tu perfil</h2>
+          <p className="text-muted-foreground mt-2">Paso 2 de 2: Preferencias y objetivos</p>
         </div>
-
-        <div className="space-y-6">
-          {/* Weight and Height */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="weight" className="block mb-2">
-                Peso (kg)
-              </label>
-              <Input
-                id="weight"
-                type="number"
-                placeholder="70"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                min="30"
-                max="300"
-              />
-            </div>
-            <div>
-              <label htmlFor="height" className="block mb-2">
-                Estatura (cm)
-              </label>
-              <Input
-                id="height"
-                type="number"
-                placeholder="170"
-                value={height}
-                onChange={(e) => setHeight(e.target.value)}
-                min="100"
-                max="250"
-              />
-            </div>
-          </div>
-
-          {/* BMI Display */}
-          {bmi && (
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground mb-1">Tu Índice de Masa Corporal (IMC)</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-indigo-900">{bmi}</span>
-                    <span className={getBMICategory(parseFloat(bmi)).color}>
-                      {getBMICategory(parseFloat(bmi)).label}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Main Goal */}
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Primary Goal */}
           <div>
-            <label className="block mb-3">
-              ¿Cuál es tu meta principal?
-            </label>
+            <Label className="flex items-center gap-2 mb-3">
+              <Target size={18} />
+              Objetivo principal
+            </Label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                onClick={() => setMainGoal('glucose')}
-                className={`p-4 rounded-lg border-2 transition-all text-left ${
-                  mainGoal === 'glucose'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
-                }`}
-              >
-                <div className="mb-2">🩸</div>
-                <div className="mb-1">Controlar glucosa</div>
-                <div className="text-muted-foreground">
-                  Mantener niveles estables de azúcar en sangre
-                </div>
-              </button>
-              <button
-                onClick={() => setMainGoal('weight-loss')}
-                className={`p-4 rounded-lg border-2 transition-all text-left ${
-                  mainGoal === 'weight-loss'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
-                }`}
-              >
-                <div className="mb-2">⚖️</div>
-                <div className="mb-1">Bajar de peso</div>
-                <div className="text-muted-foreground">
-                  Reducir peso mientras controlo la diabetes
-                </div>
-              </button>
+              <OptionCard
+                selected={formData.primaryGoal === 'glucose-control'}
+                onClick={() => setFormData({ ...formData, primaryGoal: 'glucose-control' })}
+                title="Control glucémico"
+                description="Estabilizar niveles de azúcar"
+              />
+              <OptionCard
+                selected={formData.primaryGoal === 'weight-loss'}
+                onClick={() => setFormData({ ...formData, primaryGoal: 'weight-loss' })}
+                title="Pérdida de peso"
+                description="Reducir peso corporal"
+              />
             </div>
           </div>
-
-          {/* Daily Carbs Goal */}
+          
+          {/* Diet Type */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <label>
-                Carbohidratos diarios objetivo
-              </label>
-              <Badge variant="outline" className="text-primary">
-                {dailyCarbsGoal}g
-              </Badge>
+            <Label className="flex items-center gap-2 mb-3">
+              <Leaf size={18} />
+              Tipo de dieta
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <OptionCard
+                selected={formData.dietType === 'omnivore'}
+                onClick={() => setFormData({ ...formData, dietType: 'omnivore' })}
+                title="Omnívoro"
+                description="Incluye carnes y vegetales"
+              />
+              <OptionCard
+                selected={formData.dietType === 'vegetarian'}
+                onClick={() => setFormData({ ...formData, dietType: 'vegetarian' })}
+                title="Vegetariano"
+                description="Solo alimentos vegetales"
+              />
             </div>
-            <Slider
-              value={[dailyCarbsGoal]}
-              onValueChange={(value) => setDailyCarbsGoal(value[0])}
-              min={100}
-              max={250}
-              step={10}
-              className="mb-2"
-            />
-            <div className="flex justify-between text-muted-foreground">
-              <span>100g</span>
-              <span className="text-center">
-                {dailyCarbsGoal < 130 && 'Bajo'}
-                {dailyCarbsGoal >= 130 && dailyCarbsGoal <= 180 && 'Moderado'}
-                {dailyCarbsGoal > 180 && 'Alto'}
-              </span>
-              <span>250g</span>
-            </div>
-            <p className="text-muted-foreground mt-2">
-              Recomendado para diabetes tipo 2: 130-180g al día
-            </p>
           </div>
-        </div>
-
-        <Button 
-          onClick={handleNext}
-          className="w-full mt-8"
-          size="lg"
-          disabled={!isValid}
-        >
-          Crear mi plan alimenticio
-        </Button>
+          
+          {/* Hypertension */}
+          <div>
+            <Label className="flex items-center gap-2 mb-3">
+              <AlertCircle size={18} />
+              Condiciones adicionales
+            </Label>
+            <label className="flex items-center gap-3 p-4 rounded-lg border-2 bg-card cursor-pointer hover:bg-accent/50 transition-colors">
+              <Checkbox
+                checked={formData.hasHypertension}
+                onCheckedChange={(checked) => setFormData({ ...formData, hasHypertension: checked as boolean })}
+              />
+              <div>
+                <span className="font-medium">Tengo hipertensión</span>
+                <p className="text-sm text-muted-foreground">Limitará sodio en recomendaciones</p>
+              </div>
+            </label>
+          </div>
+          
+          {/* Allergies */}
+          <div>
+            <Label className="flex items-center gap-2 mb-3">
+              <AlertCircle size={18} />
+              Alergias alimentarias
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              {commonAllergies.map((allergy) => (
+                <label
+                  key={allergy}
+                  className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    (allergy === 'Ninguna' && formData.allergies.length === 0) || formData.allergies.includes(allergy)
+                      ? 'border-primary bg-primary/10'
+                      : 'border-input bg-card hover:bg-accent/50'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={allergy === 'Ninguna' ? formData.allergies.length === 0 : formData.allergies.includes(allergy)}
+                    onChange={() => handleAllergyToggle(allergy)}
+                    className="sr-only"
+                  />
+                  <span className="text-sm">{allergy}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex gap-3 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onBack}
+              className="flex-1"
+            >
+              <ChevronLeft size={20} />
+              Atrás
+            </Button>
+            <Button type="submit" className="flex-1">
+              Guardar perfil
+            </Button>
+          </div>
+        </form>
       </Card>
     </div>
+  );
+}
+
+function OptionCard({ 
+  selected, 
+  onClick, 
+  title, 
+  description 
+}: { 
+  selected: boolean; 
+  onClick: () => void; 
+  title: string; 
+  description: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`p-4 rounded-lg border-2 text-left transition-all ${
+        selected
+          ? 'border-primary bg-primary/10'
+          : 'border-input bg-card hover:bg-accent/50'
+      }`}
+    >
+      <h4 className="font-medium">{title}</h4>
+      <p className="text-sm text-muted-foreground mt-1">{description}</p>
+    </button>
   );
 }

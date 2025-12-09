@@ -1,95 +1,155 @@
-import { useState, useEffect } from 'react';
-import { LoginPage } from './components/LoginPage';
-import { ConsentPage } from './components/ConsentPage';
+import React, { useState, useEffect } from 'react';
+import { Onboarding } from './components/Onboarding';
 import { ProfileStep1 } from './components/ProfileStep1';
 import { ProfileStep2 } from './components/ProfileStep2';
-import { DailyPlanPage } from './components/DailyPlanPage';
+import { MealRecommendation } from './components/MealRecommendation';
+import { ProfileView } from './components/ProfileView';
+import { UserProfile, MealRecommendation as MealType, MealComponent } from './types';
+import { generateMealRecommendation } from './utils/mealGenerator';
 
-type AppFlow = 'login' | 'consent' | 'profile-step1' | 'profile-step2' | 'daily-plan';
+type Screen = 'onboarding' | 'profile-step1' | 'profile-step2' | 'meal';
 
-interface UserProfile {
-  email: string;
-  hasDiabetesT2: boolean;
-  hasHypertension: boolean;
-  dietType: 'omnivore' | 'vegetarian';
-  allergies: string[];
-  weight: number;
-  height: number;
-  bmi: number;
-  mainGoal: 'glucose' | 'weight-loss';
-  dailyCarbsGoal: number;
-}
-
-export default function App() {
-  const [currentStep, setCurrentStep] = useState<AppFlow>('login');
-  const [userProfile, setUserProfile] = useState<Partial<UserProfile>>({});
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
+function App() {
+  const [currentScreen, setCurrentScreen] = useState<Screen>('onboarding');
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileStep1Data, setProfileStep1Data] = useState<any>(null);
+  const [currentMeal, setCurrentMeal] = useState<MealType | null>(null);
+  const [showProfileView, setShowProfileView] = useState(false);
+  
+  // Load profile from localStorage on mount
   useEffect(() => {
-    // Check if user has already logged in and accepted consent
-    const savedProfile = localStorage.getItem('userProfile');
-    const hasConsented = localStorage.getItem('hasConsented');
-    
-    if (savedProfile && hasConsented === 'true') {
-      setUserProfile(JSON.parse(savedProfile));
-      setIsAuthenticated(true);
-      setCurrentStep('daily-plan');
-    } else if (hasConsented === 'true') {
-      setIsAuthenticated(true);
-      setCurrentStep('profile-step1');
-    } else if (localStorage.getItem('userEmail')) {
-      setIsAuthenticated(true);
-      setCurrentStep('consent');
+    const savedProfile = localStorage.getItem('diabetex-profile');
+    if (savedProfile) {
+      const parsedProfile = JSON.parse(savedProfile);
+      setProfile(parsedProfile);
+      setCurrentScreen('meal');
+      
+      // Generate initial meal
+      const meal = generateMealRecommendation(parsedProfile);
+      setCurrentMeal(meal);
     }
   }, []);
-
-  const handleLogin = (email: string) => {
-    localStorage.setItem('userEmail', email);
-    setUserProfile({ ...userProfile, email });
-    setIsAuthenticated(true);
-    setCurrentStep('consent');
+  
+  // Save profile to localStorage whenever it changes
+  useEffect(() => {
+    if (profile) {
+      localStorage.setItem('diabetex-profile', JSON.stringify(profile));
+    }
+  }, [profile]);
+  
+  const handleOnboardingStart = () => {
+    setCurrentScreen('profile-step1');
   };
-
-  const handleConsent = () => {
-    localStorage.setItem('hasConsented', 'true');
-    setCurrentStep('profile-step1');
+  
+  const handleProfileStep1Next = (data: any) => {
+    setProfileStep1Data(data);
+    setCurrentScreen('profile-step2');
   };
-
-  const handleProfileStep1 = (data: Partial<UserProfile>) => {
-    setUserProfile({ ...userProfile, ...data });
-    setCurrentStep('profile-step2');
+  
+  const handleProfileStep2Complete = (data: any) => {
+    const completeProfile: UserProfile = {
+      age: Number(profileStep1Data.age),
+      weight: Number(profileStep1Data.weight),
+      height: Number(profileStep1Data.height),
+      bmi: Number(((Number(profileStep1Data.weight) / ((Number(profileStep1Data.height) / 100) ** 2))).toFixed(1)),
+      recentGlucose: Number(profileStep1Data.recentGlucose),
+      hba1c: Number(profileStep1Data.hba1c),
+      season: profileStep1Data.season,
+      experienceLevel: profileStep1Data.experienceLevel,
+      primaryGoal: data.primaryGoal,
+      allergies: data.allergies,
+      dietType: data.dietType,
+      hasHypertension: data.hasHypertension
+    };
+    
+    setProfile(completeProfile);
+    
+    // Generate first meal
+    const meal = generateMealRecommendation(completeProfile);
+    setCurrentMeal(meal);
+    
+    setCurrentScreen('meal');
   };
-
-  const handleProfileStep2 = (data: Partial<UserProfile>) => {
-    const completeProfile = { ...userProfile, ...data } as UserProfile;
-    setUserProfile(completeProfile);
-    localStorage.setItem('userProfile', JSON.stringify(completeProfile));
-    setCurrentStep('daily-plan');
+  
+  const handleRegenerateMeal = () => {
+    if (profile) {
+      const meal = generateMealRecommendation(profile);
+      setCurrentMeal(meal);
+    }
   };
-
-  const handleUpdateProfile = (updates: Partial<UserProfile>) => {
-    const updatedProfile = { ...userProfile, ...updates } as UserProfile;
-    setUserProfile(updatedProfile);
-    localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+  
+  const handleSubstitute = (type: 'protein' | 'carbohydrate' | 'vegetable', newComponent: MealComponent) => {
+    if (currentMeal) {
+      const updatedMeal = {
+        ...currentMeal,
+        [type]: newComponent
+      };
+      
+      // Recalculate totals
+      updatedMeal.totalCarbs = Math.round(
+        updatedMeal.protein.carbs * updatedMeal.protein.portionMultiplier +
+        updatedMeal.carbohydrate.carbs * updatedMeal.carbohydrate.portionMultiplier +
+        updatedMeal.vegetable.carbs * updatedMeal.vegetable.portionMultiplier
+      );
+      
+      updatedMeal.totalCalories = Math.round(
+        updatedMeal.protein.calories * updatedMeal.protein.portionMultiplier +
+        updatedMeal.carbohydrate.calories * updatedMeal.carbohydrate.portionMultiplier +
+        updatedMeal.vegetable.calories * updatedMeal.vegetable.portionMultiplier
+      );
+      
+      setCurrentMeal(updatedMeal);
+    }
   };
-
+  
+  const handleProfileUpdate = (updatedProfile: UserProfile) => {
+    setProfile(updatedProfile);
+    
+    // Regenerate meal with updated profile
+    const meal = generateMealRecommendation(updatedProfile);
+    setCurrentMeal(meal);
+    
+    setShowProfileView(false);
+  };
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      {currentStep === 'login' && <LoginPage onLogin={handleLogin} />}
-      {currentStep === 'consent' && <ConsentPage onAccept={handleConsent} />}
-      {currentStep === 'profile-step1' && <ProfileStep1 onNext={handleProfileStep1} />}
-      {currentStep === 'profile-step2' && (
-        <ProfileStep2 
-          onNext={handleProfileStep2} 
-          onBack={() => setCurrentStep('profile-step1')}
+    <div className="min-h-screen">
+      {currentScreen === 'onboarding' && (
+        <Onboarding onStart={handleOnboardingStart} />
+      )}
+      
+      {currentScreen === 'profile-step1' && (
+        <ProfileStep1 onNext={handleProfileStep1Next} />
+      )}
+      
+      {currentScreen === 'profile-step2' && (
+        <ProfileStep2
+          onComplete={handleProfileStep2Complete}
+          onBack={() => setCurrentScreen('profile-step1')}
         />
       )}
-      {currentStep === 'daily-plan' && (
-        <DailyPlanPage 
-          userProfile={userProfile as UserProfile}
-          onUpdateProfile={handleUpdateProfile}
-        />
+      
+      {currentScreen === 'meal' && profile && currentMeal && (
+        <>
+          <MealRecommendation
+            meal={currentMeal}
+            profile={profile}
+            onRegenerate={handleRegenerateMeal}
+            onSubstitute={handleSubstitute}
+            onViewProfile={() => setShowProfileView(true)}
+          />
+          
+          {showProfileView && (
+            <ProfileView
+              profile={profile}
+              onClose={() => setShowProfileView(false)}
+              onUpdate={handleProfileUpdate}
+            />
+          )}
+        </>
       )}
     </div>
   );
 }
+
+export default App;
